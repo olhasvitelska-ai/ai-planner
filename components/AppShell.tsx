@@ -17,6 +17,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 export default function AppShell() {
   const [activeTab, setActiveTab] = useState<Tab>("capture");
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [parsing, setParsing] = useState(false);
 
   useEffect(() => {
     setTasks(loadTasks());
@@ -27,14 +28,35 @@ export default function AppShell() {
     saveTasks(updated);
   }
 
-  function handleCapture(raw: string) {
-    const lines = raw
-      .split(/[\n,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const newTasks = lines.map(createTask);
-    persistTasks([...tasks, ...newTasks]);
-    setActiveTab("inbox");
+  async function handleCapture(raw: string) {
+    setParsing(true);
+    try {
+      const res = await fetch("/api/parse-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: raw }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const newTasks: Task[] = (data.tasks ?? []).map(
+          (t: { text: string; priority: Task["priority"]; scheduledFor: Task["scheduledFor"] }) =>
+            createTask(t.text, { priority: t.priority, scheduledFor: t.scheduledFor })
+        );
+        persistTasks([...tasks, ...newTasks]);
+      } else {
+        fallbackParse(raw);
+      }
+    } catch {
+      fallbackParse(raw);
+    } finally {
+      setParsing(false);
+      setActiveTab("inbox");
+    }
+  }
+
+  function fallbackParse(raw: string) {
+    const lines = raw.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean);
+    persistTasks([...tasks, ...lines.map((t) => createTask(t))]);
   }
 
   function handleToggle(id: string) {
@@ -43,6 +65,10 @@ export default function AppShell() {
 
   function handleScheduleToday(id: string) {
     persistTasks(tasks.map((t) => (t.id === id ? { ...t, scheduledFor: "today" } : t)));
+  }
+
+  function handleScheduleLater(id: string) {
+    persistTasks(tasks.map((t) => (t.id === id ? { ...t, scheduledFor: "later" } : t)));
   }
 
   function handleDelete(id: string) {
@@ -55,9 +81,14 @@ export default function AppShell() {
   return (
     <div className="flex flex-col h-dvh max-w-lg mx-auto">
       <main className="flex-1 overflow-y-auto overscroll-contain">
-        {activeTab === "capture" && <CaptureScreen onCapture={handleCapture} />}
+        {activeTab === "capture" && <CaptureScreen onCapture={handleCapture} parsing={parsing} />}
         {activeTab === "inbox" && (
-          <InboxScreen tasks={inboxTasks} onScheduleToday={handleScheduleToday} onDelete={handleDelete} />
+          <InboxScreen
+            tasks={inboxTasks}
+            onScheduleToday={handleScheduleToday}
+            onScheduleLater={handleScheduleLater}
+            onDelete={handleDelete}
+          />
         )}
         {activeTab === "today" && <TodayScreen tasks={todayTasks} onToggle={handleToggle} />}
       </main>

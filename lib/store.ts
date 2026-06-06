@@ -24,13 +24,13 @@ export function saveTasks(tasks: Task[]): void {
   localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
 }
 
-export function createTask(text: string): Task {
+export function createTask(text: string, overrides?: Partial<Pick<Task, "priority" | "scheduledFor">>): Task {
   return {
     id: crypto.randomUUID(),
     text,
     done: false,
-    priority: "medium",
-    scheduledFor: null,
+    priority: overrides?.priority ?? "medium",
+    scheduledFor: overrides?.scheduledFor ?? null,
     createdAt: Date.now(),
   };
 }

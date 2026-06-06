@@ -7,6 +7,12 @@ interface Props {
   onToggle: (id: string) => void;
 }
 
+const PRIORITY_DOT: Record<Task["priority"], string> = {
+  high: "bg-red-500",
+  medium: "bg-yellow-500",
+  low: "bg-gray-600",
+};
+
 export default function TodayScreen({ tasks, onToggle }: Props) {
   const done = tasks.filter((t) => t.done).length;
   const total = tasks.length;
@@ -51,9 +57,19 @@ export default function TodayScreen({ tasks, onToggle }: Props) {
               >
                 {task.done ? "✓" : ""}
               </span>
-              <span className={`text-base leading-snug ${task.done ? "line-through text-gray-500" : "text-white"}`}>
-                {task.text}
-              </span>
+              <div className="flex-1 flex flex-col gap-1">
+                <span className={`text-base leading-snug ${task.done ? "line-through text-gray-500" : "text-white"}`}>
+                  {task.text}
+                </span>
+                {!task.done && (
+                  <span className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${PRIORITY_DOT[task.priority]}`} />
+                    <span className="text-xs text-gray-500 capitalize">
+                      {task.priority === "high" ? "Важливо" : task.priority === "low" ? "Низьке" : "Середнє"}
+                    </span>
+                  </span>
+                )}
+              </div>
             </button>
           </li>
         ))}
