@@ -116,6 +116,21 @@ export default function AppShell() {
     persist(tasks.map((t) => (t.id === id ? { ...t, timeOfDay: slot } : t)));
   }
 
+  function handleChangeTags(id: string, tags: string[]) {
+    persist(tasks.map((t) => (t.id === id ? { ...t, tags } : t)));
+  }
+
+  function handleRenameTag(oldTag: string, newTag: string) {
+    persist(tasks.map((t) => ({
+      ...t,
+      tags: t.tags.map((tag) => (tag === oldTag ? newTag : tag)),
+    })));
+  }
+
+  function handleDeleteTag(tag: string) {
+    persist(tasks.map((t) => ({ ...t, tags: t.tags.filter((g) => g !== tag) })));
+  }
+
   function handleReorder(id: string, direction: "up" | "down") {
     const today = todayMidnight();
     // Get today's tasks in current sortOrder
@@ -143,6 +158,7 @@ export default function AppShell() {
   // ── Derived ──────────────────────────────────────────────────
   const inboxTasks = tasks.filter((t) => t.scheduledFor !== "today");
   const todayTasks = tasks.filter((t) => t.scheduledFor === "today");
+  const allTags = Array.from(new Set(tasks.flatMap((t) => t.tags))).sort();
   const detailTask = detailTaskId ? tasks.find((t) => t.id === detailTaskId) ?? null : null;
 
   return (
@@ -154,10 +170,12 @@ export default function AppShell() {
         {activeTab === "inbox" && (
           <InboxScreen
             tasks={inboxTasks}
+            allTags={allTags}
             onScheduleToday={handleScheduleToday}
             onScheduleLater={handleScheduleLater}
             onDelete={handleDelete}
             onOpenDetail={(id) => setDetailTaskId(id)}
+            onChangeTags={handleChangeTags}
           />
         )}
         {activeTab === "today" && (
@@ -171,7 +189,11 @@ export default function AppShell() {
           />
         )}
         {activeTab === "analytics" && (
-          <AnalyticsScreen tasks={tasks} />
+          <AnalyticsScreen
+            tasks={tasks}
+            onRenameTag={handleRenameTag}
+            onDeleteTag={handleDeleteTag}
+          />
         )}
       </main>
 

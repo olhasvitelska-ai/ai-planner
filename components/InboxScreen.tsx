@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Task, todayMidnight } from "@/lib/store";
 import FilterBar, { Filters, applyFilters } from "./FilterBar";
 import LaterSheet from "./LaterSheet";
+import TagPicker from "./TagPicker";
 
 const S = {
   surface:  "#3B404C",
@@ -22,17 +23,21 @@ const PRIORITY_DOT: Record<Task["priority"], string> = {
 
 interface Props {
   tasks: Task[];
+  allTags: string[];
   onScheduleToday: (id: string) => void;
   onScheduleLater: (id: string, deadline: number) => void;
   onDelete: (id: string) => void;
   onOpenDetail: (id: string) => void;
+  onChangeTags: (id: string, tags: string[]) => void;
 }
 
-function TaskCard({ task, onScheduleToday, onPickLater, onOpenDetail }: {
+function TaskCard({ task, allTags, onScheduleToday, onPickLater, onOpenDetail, onChangeTags }: {
   task: Task;
+  allTags: string[];
   onScheduleToday: () => void;
   onPickLater: () => void;
   onOpenDetail: () => void;
+  onChangeTags: (tags: string[]) => void;
 }) {
   const today = todayMidnight();
   const isOverdue = task.deadline && task.deadline < today;
@@ -54,12 +59,6 @@ function TaskCard({ task, onScheduleToday, onPickLater, onOpenDetail }: {
             {task.estimatedMinutes && (
               <span className="text-xs" style={{ color: S.caption }}>⏱ {task.estimatedMinutes} хв</span>
             )}
-            {task.tags.map((tag) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: S.muted }}>
-                #{tag}
-              </span>
-            ))}
             {task.subtasks.length > 0 && (
               <span className="text-xs" style={{ color: S.caption }}>
                 ☑ {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
@@ -69,6 +68,11 @@ function TaskCard({ task, onScheduleToday, onPickLater, onOpenDetail }: {
         </div>
         <span style={{ color: S.caption, fontSize: "1.1rem" }}>›</span>
       </button>
+
+      {/* Inline tag editor */}
+      <div className="px-4 pb-2 pt-1">
+        <TagPicker tags={task.tags} allTags={allTags} onChange={onChangeTags} compact />
+      </div>
 
       <div className="flex gap-2 px-4 pb-3 pt-0" style={{ borderTop: `1px solid ${S.border}` }}>
         <button onClick={onScheduleToday}
@@ -88,15 +92,9 @@ function TaskCard({ task, onScheduleToday, onPickLater, onOpenDetail }: {
   );
 }
 
-export default function InboxScreen({ tasks, onScheduleToday, onScheduleLater, onDelete, onOpenDetail }: Props) {
+export default function InboxScreen({ tasks, allTags, onScheduleToday, onScheduleLater, onDelete, onOpenDetail, onChangeTags }: Props) {
   const [filters, setFilters] = useState<Filters>({ priority: null, tag: null, overdue: false });
   const [laterTaskId, setLaterTaskId] = useState<string | null>(null);
-
-  const allTags = useMemo(() => {
-    const s = new Set<string>();
-    tasks.forEach((t) => t.tags.forEach((g) => s.add(g)));
-    return Array.from(s);
-  }, [tasks]);
 
   const filtered = applyFilters(tasks, filters);
   const unscheduled = filtered.filter((t) => t.scheduledFor === null);
@@ -132,10 +130,11 @@ export default function InboxScreen({ tasks, onScheduleToday, onScheduleLater, o
           {unscheduled.length > 0 && (
             <ul className="flex flex-col gap-2">
               {unscheduled.map((task) => (
-                <TaskCard key={task.id} task={task}
+                <TaskCard key={task.id} task={task} allTags={allTags}
                   onScheduleToday={() => onScheduleToday(task.id)}
                   onPickLater={() => setLaterTaskId(task.id)}
                   onOpenDetail={() => onOpenDetail(task.id)}
+                  onChangeTags={(tags) => onChangeTags(task.id, tags)}
                 />
               ))}
             </ul>
@@ -146,10 +145,11 @@ export default function InboxScreen({ tasks, onScheduleToday, onScheduleLater, o
               <p className="text-xs font-medium uppercase tracking-widest" style={{ color: S.caption }}>На пізніше</p>
               <ul className="flex flex-col gap-2">
                 {later.map((task) => (
-                  <TaskCard key={task.id} task={task}
+                  <TaskCard key={task.id} task={task} allTags={allTags}
                     onScheduleToday={() => onScheduleToday(task.id)}
                     onPickLater={() => setLaterTaskId(task.id)}
                     onOpenDetail={() => onOpenDetail(task.id)}
+                    onChangeTags={(tags) => onChangeTags(task.id, tags)}
                   />
                 ))}
               </ul>

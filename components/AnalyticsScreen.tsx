@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Task, todayMidnight } from "@/lib/store";
 
 const S = {
@@ -17,9 +17,11 @@ const MONTH_SHORT = ["січ","лют","бер","квіт","трав","черв"
 
 interface Props {
   tasks: Task[];
+  onRenameTag: (oldTag: string, newTag: string) => void;
+  onDeleteTag: (tag: string) => void;
 }
 
-export default function AnalyticsScreen({ tasks }: Props) {
+export default function AnalyticsScreen({ tasks, onRenameTag, onDeleteTag }: Props) {
   const today = todayMidnight();
 
   const stats = useMemo(() => {
@@ -167,6 +169,9 @@ export default function AnalyticsScreen({ tasks }: Props) {
           {stats.done} із {stats.total} задач виконано
         </p>
       </Section>
+
+      {/* Category manager */}
+      <CategoryManager tasks={tasks} onRename={onRenameTag} onDelete={onDeleteTag} />
     </div>
   );
 }
@@ -196,6 +201,88 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="rounded-lg p-4 flex flex-col gap-3" style={{ backgroundColor: S.surface, border: `1px solid ${S.border}` }}>
         {children}
       </div>
+    </div>
+  );
+}
+
+function CategoryManager({ tasks, onRename, onDelete }: {
+  tasks: Task[];
+  onRename: (old: string, next: string) => void;
+  onDelete: (tag: string) => void;
+}) {
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const tagStats = useMemo(() => {
+    const map = new Map<string, number>();
+    tasks.forEach((t) => t.tags.forEach((tag) => map.set(tag, (map.get(tag) ?? 0) + 1)));
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [tasks]);
+
+  function startEdit(tag: string) {
+    setEditingTag(tag);
+    setEditValue(tag);
+  }
+
+  function commitEdit(tag: string) {
+    const next = editValue.trim().toLowerCase();
+    if (next && next !== tag) onRename(tag, next);
+    setEditingTag(null);
+  }
+
+  if (tagStats.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs font-medium uppercase tracking-widest" style={{ color: S.caption }}>
+        Категорії
+      </p>
+      <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${S.border}` }}>
+        {tagStats.map(([tag, count], i) => (
+          <div
+            key={tag}
+            className="flex items-center gap-3 px-4 py-3"
+            style={{
+              backgroundColor: S.surface,
+              borderTop: i > 0 ? `1px solid ${S.border}` : "none",
+            }}
+          >
+            {editingTag === tag ? (
+              <input
+                autoFocus
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={() => commitEdit(tag)}
+                onKeyDown={(e) => { if (e.key === "Enter") commitEdit(tag); if (e.key === "Escape") setEditingTag(null); }}
+                className="flex-1 bg-transparent text-sm focus:outline-none"
+                style={{ color: S.text, borderBottom: `1px solid ${S.red}` }}
+              />
+            ) : (
+              <button
+                onClick={() => startEdit(tag)}
+                className="flex-1 text-left text-sm"
+                style={{ color: S.text }}
+              >
+                #{tag}
+              </button>
+            )}
+            <span className="text-xs shrink-0" style={{ color: S.caption }}>
+              {count} {count === 1 ? "задача" : count < 5 ? "задачі" : "задач"}
+            </span>
+            <button
+              onClick={() => onDelete(tag)}
+              className="shrink-0 text-sm px-2 py-0.5 rounded-md transition-colors"
+              style={{ color: S.caption, backgroundColor: "rgba(255,255,255,0.04)" }}
+              title="Видалити категорію"
+            >
+              🗑
+            </button>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs" style={{ color: S.caption }}>
+        Натисни на назву щоб перейменувати. Зміна застосовується до всіх задач.
+      </p>
     </div>
   );
 }
