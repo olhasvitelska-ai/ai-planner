@@ -10,7 +10,8 @@ export default function CaptureScreen({ onCapture }: Props) {
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -20,9 +21,9 @@ export default function CaptureScreen({ onCapture }: Props) {
   }, []);
 
   function startListening() {
-    const SR =
-      (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition ??
-      window.SpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!SR) return;
 
     const recognition = new SR();
@@ -30,9 +31,11 @@ export default function CaptureScreen({ onCapture }: Props) {
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    recognition.onresult = (e: SpeechRecognitionEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
       const transcript = Array.from(e.results)
-        .map((r) => r[0].transcript)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((r: any) => r[0].transcript)
         .join(" ");
       setText(transcript);
     };
