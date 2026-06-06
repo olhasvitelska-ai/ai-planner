@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tab-bar-height: 72px;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+/* Prevent double-tap zoom on buttons */
+button,
+a {
+  touch-action: manipulation;
+}
