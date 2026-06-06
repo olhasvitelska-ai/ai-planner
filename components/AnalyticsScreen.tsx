@@ -172,6 +172,9 @@ export default function AnalyticsScreen({ tasks, onRenameTag, onDeleteTag }: Pro
 
       {/* Category manager */}
       <CategoryManager tasks={tasks} onRename={onRenameTag} onDelete={onDeleteTag} />
+
+      {/* Анекдот від Діми Іванова */}
+      <DimaJoke />
     </div>
   );
 }
@@ -283,6 +286,27 @@ function CategoryManager({ tasks, onRename, onDelete }: {
       <p className="text-xs" style={{ color: S.caption }}>
         Натисни на назву щоб перейменувати. Зміна застосовується до всіх задач.
       </p>
+    </div>
+  );
+}
+
+function DimaJoke() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full py-3 rounded-lg text-sm font-medium transition-colors"
+        style={{ backgroundColor: open ? "rgba(253,52,51,0.12)" : S.surface, color: open ? S.red : S.muted, border: `1px solid ${open ? "rgba(253,52,51,0.30)" : S.border}` }}
+      >
+        🐢 Анекдот від Діми Іванова
+      </button>
+      {open && (
+        <div className="rounded-lg p-4 text-sm font-medium" style={{ backgroundColor: S.surface, border: `1px solid S.border`, color: S.text, lineHeight: "1.6" }}>
+          Є черепашка, а як звати дорослу черепашку?<br />
+          <span style={{ color: S.red }}>череПАВЕЛ 🐢</span>
+        </div>
+      )}
     </div>
   );
 }
