@@ -1,14 +1,22 @@
 export type Priority = "high" | "medium" | "low";
 
+export interface Subtask {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   text: string;
   done: boolean;
   priority: Priority;
   scheduledFor: "today" | "later" | null;
-  deadline: number | null; // timestamp ms, date only (midnight)
+  deadline: number | null;       // midnight timestamp ms
   estimatedMinutes: number | null;
   tags: string[];
+  notes: string;
+  subtasks: Subtask[];
   createdAt: number;
 }
 
@@ -27,6 +35,8 @@ export function loadTasks(): Task[] {
       deadline: t.deadline ?? null,
       estimatedMinutes: t.estimatedMinutes ?? null,
       tags: t.tags ?? [],
+      notes: t.notes ?? "",
+      subtasks: t.subtasks ?? [],
       createdAt: t.createdAt ?? Date.now(),
     }));
   } catch {
@@ -51,6 +61,8 @@ export function createTask(
     deadline: overrides?.deadline ?? null,
     estimatedMinutes: overrides?.estimatedMinutes ?? null,
     tags: overrides?.tags ?? [],
+    notes: "",
+    subtasks: [],
     createdAt: Date.now(),
   };
 }
@@ -65,5 +77,14 @@ export function dayMidnight(offset: number): number {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + offset);
+  return d.getTime();
+}
+
+/** Parse "YYYY-MM-DD" → midnight UTC timestamp in local time */
+export function parseDateString(s: string): number | null {
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  d.setHours(0, 0, 0, 0);
   return d.getTime();
 }
