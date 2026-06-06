@@ -7,9 +7,10 @@ export interface ParsedTask {
   text: string;
   priority: "high" | "medium" | "low";
   scheduledFor: "today" | "later" | null;
-  deadline: string | null;       // "YYYY-MM-DD" or null
+  deadline: string | null;
   estimatedMinutes: number | null;
   tags: string[];
+  timeOfDay: "morning" | "afternoon" | "evening" | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -28,18 +29,23 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "user",
-        content: `Today is ${todayStr}. Parse the following Ukrainian or mixed-language text into a structured task list.
+        content: `Today is ${todayStr}. Parse the following Ukrainian or mixed-language brain-dump into a structured task list.
 
-For each task determine:
-- text: cleaned task description (keep the original language)
+For each task determine ALL of these fields:
+- text: cleaned task description (keep original language)
 - priority: "high" if urgent/critical/важливо/терміново, "low" if minor/someday/колись, otherwise "medium"
-- scheduledFor: "today" if today/сьогодні, "later" if deferred/пізніше/потім/згодом, null if unspecified
-- deadline: a "YYYY-MM-DD" date string if a specific date/day/deadline is mentioned (e.g. "до п'ятниці" = next Friday, "до кінця тижня" = this Sunday, "завтра" = tomorrow), otherwise null
-- estimatedMinutes: realistic time estimate in minutes (e.g. "зателефонувати" ≈ 10, "написати звіт" ≈ 90, "купити хліб" ≈ 20), null if completely unclear
-- tags: array of 1–3 short Ukrainian tags that categorize the task (e.g. ["робота"], ["особисте"], ["покупки"], ["здоров'я"], ["фінанси"]), empty array if none fit
+- scheduledFor: "today" if today/сьогодні, "later" if deferred, null if unspecified
+- deadline: "YYYY-MM-DD" if a date is mentioned (e.g. "до п'ятниці"=next Friday, "завтра"=tomorrow, "до кінця тижня"=this Sunday), otherwise null
+- estimatedMinutes: realistic time estimate (зателефонувати≈10, email≈15, купити продукти≈30, написати звіт≈90, зробити презентацію≈120), null if truly unclear
+- tags: 1–3 short Ukrainian category tags from: ["робота","особисте","покупки","здоров'я","фінанси","навчання","дім","спорт","сім'я"], empty if none fit
+- timeOfDay: energy-based recommendation —
+    "morning" = tasks requiring deep focus, creativity, high cognitive load (звіти, складні рішення, важливі дзвінки)
+    "afternoon" = meetings, communication, collaborative work, errands (зустрічі, листи, покупки)
+    "evening" = routine, admin, light reading, planning (рутина, планування, прості задачі)
+    null = if truly unclear
 
-Return ONLY valid JSON, no markdown, no explanation:
-{"tasks": [{"text": "...", "priority": "high"|"medium"|"low", "scheduledFor": "today"|"later"|null, "deadline": "YYYY-MM-DD"|null, "estimatedMinutes": number|null, "tags": [...]}]}
+Return ONLY valid JSON, no markdown:
+{"tasks": [{"text":"...","priority":"high"|"medium"|"low","scheduledFor":"today"|"later"|null,"deadline":"YYYY-MM-DD"|null,"estimatedMinutes":number|null,"tags":[...],"timeOfDay":"morning"|"afternoon"|"evening"|null}]}
 
 Text to parse:
 ${text}`,

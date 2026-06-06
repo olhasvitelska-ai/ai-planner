@@ -1,4 +1,5 @@
 export type Priority = "high" | "medium" | "low";
+export type TimeOfDay = "morning" | "afternoon" | "evening";
 
 export interface Subtask {
   id: string;
@@ -17,6 +18,8 @@ export interface Task {
   tags: string[];
   notes: string;
   subtasks: Subtask[];
+  timeOfDay: TimeOfDay | null;   // energy-based slot
+  sortOrder: number;             // manual ordering within a slot
   createdAt: number;
 }
 
@@ -26,7 +29,7 @@ export function loadTasks(): Task[] {
   if (typeof window === "undefined") return [];
   try {
     const raw: Partial<Task>[] = JSON.parse(localStorage.getItem(TASKS_KEY) ?? "[]");
-    return raw.map((t) => ({
+    return raw.map((t, i) => ({
       id: t.id ?? crypto.randomUUID(),
       text: t.text ?? "",
       done: t.done ?? false,
@@ -37,6 +40,8 @@ export function loadTasks(): Task[] {
       tags: t.tags ?? [],
       notes: t.notes ?? "",
       subtasks: t.subtasks ?? [],
+      timeOfDay: t.timeOfDay ?? null,
+      sortOrder: t.sortOrder ?? i,
       createdAt: t.createdAt ?? Date.now(),
     }));
   } catch {
@@ -50,7 +55,7 @@ export function saveTasks(tasks: Task[]): void {
 
 export function createTask(
   text: string,
-  overrides?: Partial<Pick<Task, "priority" | "scheduledFor" | "deadline" | "estimatedMinutes" | "tags">>
+  overrides?: Partial<Pick<Task, "priority" | "scheduledFor" | "deadline" | "estimatedMinutes" | "tags" | "timeOfDay">>
 ): Task {
   return {
     id: crypto.randomUUID(),
@@ -63,6 +68,8 @@ export function createTask(
     tags: overrides?.tags ?? [],
     notes: "",
     subtasks: [],
+    timeOfDay: overrides?.timeOfDay ?? null,
+    sortOrder: Date.now(),
     createdAt: Date.now(),
   };
 }
@@ -80,11 +87,17 @@ export function dayMidnight(offset: number): number {
   return d.getTime();
 }
 
-/** Parse "YYYY-MM-DD" → midnight UTC timestamp in local time */
+/** Parse "YYYY-MM-DD" → midnight local timestamp */
 export function parseDateString(s: string): number | null {
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return null;
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   d.setHours(0, 0, 0, 0);
   return d.getTime();
+}
+
+/** Format timestamp as "YYYY-MM-DD" */
+export function formatDateString(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
