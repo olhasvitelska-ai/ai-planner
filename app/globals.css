@@ -1,19 +1,47 @@
+@import url('https://rsms.me/inter/inter.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --tab-bar-height: 72px;
+  --skelar-red: #FD3433;
+  --skelar-blue-85: #222631;
+  --skelar-blue-75: #3B404C;
+  --skelar-blue-60: #616672;
+  --skelar-n97: #060607;
+  --skelar-border: rgba(255, 255, 255, 0.08);
 }
 
-html,
+html {
+  color-scheme: dark;
+  height: 100%;
+}
+
 body {
   height: 100%;
   overscroll-behavior: none;
+  background-color: var(--skelar-blue-85);
+  color: rgba(255, 255, 255, 0.95);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Prevent double-tap zoom on buttons */
-button,
-a {
+button, a {
   touch-action: manipulation;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+:focus-visible {
+  outline: 2px solid #FD3433;
+  outline-offset: 2px;
 }

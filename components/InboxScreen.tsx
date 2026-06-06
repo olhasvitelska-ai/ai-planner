@@ -9,37 +9,65 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const PRIORITY_BADGE: Record<Task["priority"], { label: string; className: string }> = {
-  high: { label: "Важливо", className: "bg-red-500/20 text-red-400" },
-  medium: { label: "Середнє", className: "bg-yellow-500/20 text-yellow-400" },
-  low: { label: "Низьке", className: "bg-gray-700 text-gray-400" },
+// Priority: high=red, medium=white/50%, low=white/30%
+const PRIORITY_CONFIG: Record<Task["priority"], { dot: string; label: string; labelColor: string }> = {
+  high:   { dot: "#FD3433", label: "Важливо",  labelColor: "#FD3433" },
+  medium: { dot: "rgba(255,255,255,0.50)", label: "Середнє", labelColor: "rgba(255,255,255,0.50)" },
+  low:    { dot: "rgba(255,255,255,0.25)", label: "Низьке",  labelColor: "rgba(255,255,255,0.25)" },
 };
 
-function TaskCard({
-  task,
-  onScheduleToday,
-  onScheduleLater,
-  onDelete,
-}: {
+function TaskCard({ task, onScheduleToday, onScheduleLater, onDelete }: {
   task: Task;
   onScheduleToday: (id: string) => void;
   onScheduleLater: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const badge = PRIORITY_BADGE[task.priority];
+  const p = PRIORITY_CONFIG[task.priority];
+
   return (
-    <li className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-white text-base leading-snug flex-1">{task.text}</p>
-        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}>
-          {badge.label}
-        </span>
+    <li
+      className="rounded-lg p-4 flex flex-col gap-3"
+      style={{ backgroundColor: "#3B404C", border: "1px solid rgba(255,255,255,0.08)" }}
+    >
+      {/* Task text + priority dot */}
+      <div className="flex items-start gap-3">
+        <span
+          className="mt-1.5 shrink-0 w-2 h-2 rounded-full"
+          style={{ backgroundColor: p.dot }}
+        />
+        <p className="flex-1 text-base leading-snug" style={{ color: "rgba(255,255,255,0.95)" }}>
+          {task.text}
+        </p>
       </div>
-      <div className="flex gap-2">
+
+      {/* Meta row */}
+      <div className="flex items-center gap-3 pl-5">
+        <span className="text-xs font-medium" style={{ color: p.labelColor }}>
+          {p.label}
+        </span>
+        {task.estimatedMinutes && (
+          <span className="text-xs" style={{ color: "rgba(255,255,255,0.40)" }}>
+            ⏱ {task.estimatedMinutes} хв
+          </span>
+        )}
+        {task.tags.map((tag) => (
+          <span
+            key={tag}
+            className="text-xs px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 pl-5">
         {task.scheduledFor !== "today" && (
           <button
             onClick={() => onScheduleToday(task.id)}
-            className="flex-1 py-3 rounded-xl bg-sky-500/20 text-sky-400 text-sm font-medium active:bg-sky-500/30 transition-colors"
+            className="flex-1 py-2.5 rounded-md text-sm font-medium transition-colors"
+            style={{ backgroundColor: "rgba(253,52,51,0.12)", color: "#FD3433", borderRadius: "8px" }}
           >
             ✅ На сьогодні
           </button>
@@ -47,14 +75,26 @@ function TaskCard({
         {task.scheduledFor !== "later" && (
           <button
             onClick={() => onScheduleLater(task.id)}
-            className="flex-1 py-3 rounded-xl bg-violet-500/20 text-violet-400 text-sm font-medium active:bg-violet-500/30 transition-colors"
+            className="flex-1 py-2.5 rounded-md text-sm font-medium transition-colors"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.06)",
+              color: "rgba(255,255,255,0.70)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "8px",
+            }}
           >
             ⏰ На пізніше
           </button>
         )}
         <button
           onClick={() => onDelete(task.id)}
-          className="py-3 px-4 rounded-xl bg-gray-800 text-gray-400 text-sm active:bg-gray-700 transition-colors"
+          className="py-2.5 px-3 rounded-md text-sm transition-colors"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.04)",
+            color: "rgba(255,255,255,0.30)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "8px",
+          }}
           aria-label="Видалити"
         >
           🗑
@@ -69,8 +109,12 @@ export default function InboxScreen({ tasks, onScheduleToday, onScheduleLater, o
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-72px)] gap-4 text-center p-8">
         <span className="text-6xl">📭</span>
-        <h2 className="text-xl font-semibold text-white">Вхідні порожні</h2>
-        <p className="text-gray-400">Перейди на «Захоплення» і розкажи, що в голові</p>
+        <h2 className="text-xl font-medium" style={{ color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>
+          Вхідні порожні
+        </h2>
+        <p className="text-sm" style={{ color: "rgba(255,255,255,0.50)" }}>
+          Перейди на «Захоплення» і розкажи, що в голові
+        </p>
       </div>
     );
   }
@@ -80,16 +124,25 @@ export default function InboxScreen({ tasks, onScheduleToday, onScheduleLater, o
 
   return (
     <div className="flex flex-col gap-3 p-4 pb-6">
-      <h1 className="text-xl font-bold pt-4 text-white">
-        Вхідні <span className="text-sky-400 font-normal">({tasks.length})</span>
-      </h1>
+      <div className="flex items-baseline justify-between pt-6 pb-2">
+        <h1
+          className="text-xl font-medium"
+          style={{ color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}
+        >
+          Вхідні
+        </h1>
+        <span
+          className="text-sm px-2 py-0.5 rounded-full font-medium"
+          style={{ backgroundColor: "#FD3433", color: "#FFFFFF" }}
+        >
+          {tasks.length}
+        </span>
+      </div>
 
       {unscheduled.length > 0 && (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-2">
           {unscheduled.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
+            <TaskCard key={task.id} task={task}
               onScheduleToday={onScheduleToday}
               onScheduleLater={onScheduleLater}
               onDelete={onDelete}
@@ -100,12 +153,15 @@ export default function InboxScreen({ tasks, onScheduleToday, onScheduleLater, o
 
       {later.length > 0 && (
         <>
-          <h2 className="text-sm font-semibold text-gray-500 mt-2 uppercase tracking-wider">На пізніше</h2>
-          <ul className="flex flex-col gap-3">
+          <p
+            className="text-xs font-medium mt-3 uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.40)" }}
+          >
+            На пізніше
+          </p>
+          <ul className="flex flex-col gap-2">
             {later.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
+              <TaskCard key={task.id} task={task}
                 onScheduleToday={onScheduleToday}
                 onScheduleLater={onScheduleLater}
                 onDelete={onDelete}

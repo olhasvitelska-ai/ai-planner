@@ -11,7 +11,7 @@ type Tab = "capture" | "inbox" | "today";
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "capture", label: "Захоплення", icon: "🎤" },
   { id: "inbox", label: "Вхідні", icon: "📥" },
-  { id: "today", label: "Сьогодні", icon: "✅" },
+  { id: "today", label: "Майбутнє", icon: "📅" },
 ];
 
 export default function AppShell() {
@@ -39,8 +39,14 @@ export default function AppShell() {
       if (res.ok) {
         const data = await res.json();
         const newTasks: Task[] = (data.tasks ?? []).map(
-          (t: { text: string; priority: Task["priority"]; scheduledFor: Task["scheduledFor"] }) =>
-            createTask(t.text, { priority: t.priority, scheduledFor: t.scheduledFor })
+          (t: { text: string; priority: Task["priority"]; scheduledFor: Task["scheduledFor"]; deadline?: number; estimatedMinutes?: number; tags?: string[] }) =>
+            createTask(t.text, {
+              priority: t.priority,
+              scheduledFor: t.scheduledFor,
+              deadline: t.deadline ?? null,
+              estimatedMinutes: t.estimatedMinutes ?? null,
+              tags: t.tags ?? [],
+            })
         );
         persistTasks([...tasks, ...newTasks]);
       } else {
@@ -93,25 +99,42 @@ export default function AppShell() {
         {activeTab === "today" && <TodayScreen tasks={todayTasks} onToggle={handleToggle} />}
       </main>
 
-      <nav className="shrink-0 bg-gray-900 border-t border-gray-800 pb-[env(safe-area-inset-bottom)]">
+      {/* Bottom nav — skelar-n97 background */}
+      <nav
+        className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
+        style={{ backgroundColor: "#060607", borderColor: "rgba(255,255,255,0.08)" }}
+      >
         <div className="flex">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex-1 flex flex-col items-center gap-1 py-4 text-xs font-medium transition-colors ${
-                activeTab === tab.id ? "text-sky-400" : "text-gray-500 active:text-gray-300"
-              }`}
-            >
-              <span className="text-2xl leading-none">{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.id === "inbox" && inboxTasks.length > 0 && (
-                <span className="absolute top-2 right-6 bg-sky-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                  {inboxTasks.length}
-                </span>
-              )}
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const badgeCount = tab.id === "inbox" ? inboxTasks.length : 0;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="relative flex-1 flex flex-col items-center gap-1 py-4 text-xs font-medium transition-colors"
+                style={{ color: isActive ? "#FD3433" : "rgba(255,255,255,0.40)" }}
+              >
+                {/* Active indicator bar */}
+                {isActive && (
+                  <span
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
+                    style={{ backgroundColor: "#FD3433" }}
+                  />
+                )}
+                <span className="text-2xl leading-none">{tab.icon}</span>
+                <span style={{ letterSpacing: "0.01em" }}>{tab.label}</span>
+                {badgeCount > 0 && (
+                  <span
+                    className="absolute top-2 right-[22%] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-semibold"
+                    style={{ backgroundColor: "#FD3433" }}
+                  >
+                    {badgeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>

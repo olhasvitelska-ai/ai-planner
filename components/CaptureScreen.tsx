@@ -25,19 +25,16 @@ export default function CaptureScreen({ onCapture, parsing = false }: Props) {
     const w = window as any;
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!SR) return;
-
     const recognition = new SR();
     recognition.lang = "uk-UA";
-    recognition.continuous = false; // Safari iOS doesn't support continuous
+    recognition.continuous = false;
     recognition.interimResults = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (e: any) => {
       const transcript = e.results[0][0].transcript;
       setText((prev) => (prev ? prev + " " + transcript : transcript));
     };
-    recognition.onend = () => {
-      setListening(false);
-    };
+    recognition.onend = () => setListening(false);
     recognition.onerror = () => setListening(false);
     recognitionRef.current = recognition;
     try {
@@ -64,36 +61,71 @@ export default function CaptureScreen({ onCapture, parsing = false }: Props) {
 
   return (
     <div className="flex flex-col min-h-[calc(100dvh-72px)] p-4 gap-4">
-      <h1 className="text-2xl font-bold text-center pt-4 text-white">Що в голові?</h1>
-      <p className="text-center text-gray-400 text-sm">Пиши або диктуй — AI впорядкує все</p>
+      {/* Header */}
+      <div className="pt-6 pb-2">
+        <h1
+          className="text-2xl font-medium text-center"
+          style={{ color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}
+        >
+          Що в голові?
+        </h1>
+        <p className="text-center text-sm mt-1" style={{ color: "rgba(255,255,255,0.50)" }}>
+          Пиши або диктуй — AI впорядкує все
+        </p>
+      </div>
 
+      {/* Textarea */}
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Зателефонувати Марині, здати звіт до п'ятниці, купити хліб..."
         disabled={parsing}
-        className="flex-1 w-full bg-gray-900 border border-gray-700 rounded-2xl p-4 text-white text-lg placeholder-gray-600 resize-none focus:outline-none focus:border-sky-500 transition-colors disabled:opacity-50"
+        className="flex-1 w-full rounded-lg p-4 text-base resize-none focus:outline-none transition-colors disabled:opacity-40"
+        style={{
+          backgroundColor: "#3B404C",
+          border: "1px solid rgba(255,255,255,0.08)",
+          color: "rgba(255,255,255,0.95)",
+          caretColor: "#FD3433",
+          fontFamily: "Inter, system-ui, sans-serif",
+          fontSize: "1rem",
+        }}
         autoFocus
       />
 
+      {/* Mic button */}
       {speechSupported && !parsing && (
         <button
           onClick={listening ? stopListening : startListening}
-          className={`mx-auto flex items-center justify-center w-20 h-20 rounded-full text-4xl shadow-lg transition-all select-none ${
-            listening ? "bg-red-500 scale-110 shadow-red-500/40" : "bg-gray-800 active:bg-gray-700"
-          }`}
+          className="mx-auto flex items-center justify-center w-16 h-16 rounded-full text-3xl transition-all select-none"
+          style={{
+            backgroundColor: listening ? "#FD3433" : "#3B404C",
+            border: "1px solid rgba(255,255,255,0.08)",
+            transform: listening ? "scale(1.1)" : "scale(1)",
+          }}
           aria-label={listening ? "Зупинити запис" : "Говорити"}
         >
           {listening ? "⏹" : "🎙️"}
         </button>
       )}
 
-      {listening && <p className="text-center text-red-400 text-sm animate-pulse">Слухаю…</p>}
+      {listening && (
+        <p className="text-center text-sm animate-pulse" style={{ color: "#FD3433" }}>
+          Слухаю…
+        </p>
+      )}
 
+      {/* Submit */}
       <button
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="w-full py-4 rounded-2xl bg-sky-500 text-white text-lg font-semibold disabled:opacity-30 disabled:cursor-not-allowed active:bg-sky-600 transition-colors"
+        className="w-full py-4 rounded-md font-medium text-base transition-all"
+        style={{
+          backgroundColor: canSubmit ? "#FD3433" : "rgba(253,52,51,0.3)",
+          color: "#FFFFFF",
+          borderRadius: "12px",
+          letterSpacing: "-0.01em",
+          cursor: canSubmit ? "pointer" : "not-allowed",
+        }}
       >
         {parsing ? (
           <span className="flex items-center justify-center gap-2">
